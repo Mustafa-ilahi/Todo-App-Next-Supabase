@@ -1,69 +1,51 @@
-"use client"
-import { supabase } from "@/utils/supabase/client";
-import { signUp } from "@/utils/supabase/utils";
-import { useState } from "react";
+import { signUpAction } from "@/app/actions";
+import { FormMessage, Message } from "@/components/form-message";
+import { SubmitButton } from "@/components/submit-button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Link from "next/link";
+import { SmtpMessage } from "../smtp-message";
 
-const SignUp = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  // Handle form submission
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Basic validation
-    if (!email || !password) {
-      setError("Please provide both email and password.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null); 
-
-    try {
-      const user = await signUp(email, password); 
-      console.log("User signed up:", user);
-    } catch (error) {
-      setError("An unexpected error occurred");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+export default async function Signup(props: {
+  searchParams: Promise<Message>;
+}) {
+  const searchParams = await props.searchParams;
+  if ("message" in searchParams) {
+    return (
+      <div className="w-full flex-1 flex items-center h-screen sm:max-w-md justify-center gap-2 p-4">
+        <FormMessage message={searchParams} />
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h2>Sign Up</h2>
-      <form onSubmit={handleSignUp}>
-        <div>
-          <label>Email:</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
-            required
-          />
-        </div>
-        <div>
-          <label>Password:</label>
-          <input
+    <>
+      <form className="flex flex-col min-w-64 max-w-64 mx-auto">
+        <h1 className="text-2xl font-medium">Sign up</h1>
+        <p className="text-sm text text-foreground">
+          Already have an account?{" "}
+          <Link className="text-primary font-medium underline" href="/sign-in">
+            Sign in
+          </Link>
+        </p>
+        <div className="flex flex-col gap-2 [&>input]:mb-3 mt-8">
+          <Label htmlFor="email">Email</Label>
+          <Input name="email" placeholder="you@example.com" required />
+          <Label htmlFor="password">Password</Label>
+          <Input
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
+            name="password"
+            placeholder="Your password"
+            minLength={6}
             required
           />
+          <SubmitButton formAction={signUpAction} pendingText="Signing up...">
+            Sign up
+          </SubmitButton>
+          <FormMessage message={searchParams} />
         </div>
-        {error && <div style={{ color: "red" }}>{error}</div>}
-        <button type="submit" disabled={loading}>
-          {loading ? "Signing Up..." : "Sign Up"}
-        </button>
       </form>
-    </div>
+      <SmtpMessage />
+    </>
   );
-};
-
-export default SignUp;
+}
