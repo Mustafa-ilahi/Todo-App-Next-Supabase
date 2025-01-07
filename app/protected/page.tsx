@@ -1,11 +1,7 @@
-"use client";
+"use client"
 import { useEffect, useState } from "react";
-import {
-  addProduct,
-  getProducts,
-  updateProduct,
-  deleteProduct,
-} from "@/utils/supabase/utils";
+import { addProduct, getProducts, updateProduct, deleteProduct } from "@/utils/supabase/utils";
+import { supabase } from "@/utils/supabase/client";
 
 type Product = {
   id: string;
@@ -24,7 +20,6 @@ const ProductsPage = () => {
   });
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Define fetchProducts function to fetch and update the product list
   const fetchProducts = async () => {
     const data = await getProducts();
     setProducts(data);
@@ -32,6 +27,18 @@ const ProductsPage = () => {
 
   useEffect(() => {
     fetchProducts();
+
+    const channel = supabase
+      .channel("products")
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, (payload) => {
+        console.log("Change received!", payload);
+        fetchProducts(); 
+      })
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,7 +58,6 @@ const ProductsPage = () => {
         price: newProduct.price,
       });
       setNewProduct({ id: "", name: "", description: "", price: 0 });
-      fetchProducts(); // Call fetchProducts after adding a new product
     } catch (error) {
       console.error(error);
     }
@@ -74,7 +80,6 @@ const ProductsPage = () => {
           price: editingProduct.price,
         });
         setEditingProduct(null);
-        fetchProducts(); // Call fetchProducts after updating a product
       } catch (error) {
         console.error(error);
       }
@@ -84,7 +89,6 @@ const ProductsPage = () => {
   const handleDeleteProduct = async (id: string) => {
     try {
       await deleteProduct(id);
-      fetchProducts(); // Call fetchProducts after deleting a product
     } catch (error) {
       console.error(error);
     }
@@ -92,15 +96,11 @@ const ProductsPage = () => {
 
   return (
     <div className="container mx-auto p-6 bg-gray-50">
-      <h1 className="text-4xl font-bold text-center text-gray-800 mb-10">
-        Products
-      </h1>
+      <h1 className="text-4xl font-bold text-center text-gray-800 mb-10">Products</h1>
 
       {/* Add New Product Form */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-          Add New Product
-        </h2>
+        <h2 className="text-2xl font-semibold text-gray-700 mb-4">Add New Product</h2>
         <form className="space-y-4" onSubmit={handleAddProduct}>
           <input
             className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -129,10 +129,7 @@ const ProductsPage = () => {
             onChange={handleInputChange}
             required
           />
-          <button
-            className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200"
-            type="submit"
-          >
+          <button className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200" type="submit">
             Add Product
           </button>
         </form>
@@ -140,9 +137,7 @@ const ProductsPage = () => {
 
       {/* Product List */}
       <div className="bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-2xl font-semibold text-gray-700 mb-6">
-          Products List
-        </h2>
+        <h2 className="text-2xl font-semibold text-gray-700 mb-6">Products List</h2>
         <ul className="space-y-4">
           {products.map((product) => (
             <li
@@ -150,13 +145,9 @@ const ProductsPage = () => {
               className="flex justify-between items-center p-4 border-b border-gray-200 rounded-lg hover:bg-gray-50 transition duration-200"
             >
               <div>
-                <h3 className="text-xl font-semibold text-gray-800">
-                  {product.name}
-                </h3>
+                <h3 className="text-xl font-semibold text-gray-800">{product.name}</h3>
                 <p className="text-gray-600">{product.description}</p>
-                <p className="text-lg font-semibold text-gray-800">
-                  ${product.price}
-                </p>
+                <p className="text-lg font-semibold text-gray-800">${product.price}</p>
               </div>
               <div className="space-x-2">
                 <button
@@ -180,9 +171,7 @@ const ProductsPage = () => {
       {/* Edit Product Form */}
       {editingProduct && (
         <div className="bg-white p-6 rounded-lg shadow-md mt-8">
-          <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-            Edit Product
-          </h2>
+          <h2 className="text-2xl font-semibold text-gray-700 mb-4">Edit Product</h2>
           <form className="space-y-4" onSubmit={handleUpdateProduct}>
             <input
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -220,10 +209,7 @@ const ProductsPage = () => {
               }
               required
             />
-            <button
-              className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200"
-              type="submit"
-            >
+            <button className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200" type="submit">
               Update Product
             </button>
             <button

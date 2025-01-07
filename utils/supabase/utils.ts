@@ -48,3 +48,15 @@ export const deleteProduct = async (id: string) => {
 
   return data;
 };
+
+export const signUp = async (email: string, password: string) => {
+    const { user, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+  
+    if (error) {
+      throw error;
+    }
+    return user;
+  };
