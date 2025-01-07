@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { supabase } from "./client";
 
 export const createClient = async () => {
   const cookieStore = await cookies();
@@ -27,3 +28,16 @@ export const createClient = async () => {
     },
   );
 };
+
+
+supabase
+  .channel('products')
+  .on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'products' },
+    (payload) => {
+      console.log('Change received!', payload);
+      // Handle real-time updates
+    }
+  )
+  .subscribe();
